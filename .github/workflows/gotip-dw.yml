@@ -28,9 +28,9 @@ jobs:
     - name: get commit id
       id: commitid
       run: |
-        echo "::set-output name=content::$(gotip version | grep -oP "[0-9a-z\.\-]{17}")"
+        echo "::set-output name=content::$(gotip version | grep -oP "[0-9a-f\.\-]{15}")"
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: dist/*
-        name: v${{ steps.commitid.outputs.content }}
+        tag_name: v${{ steps.commitid.outputs.content }}
