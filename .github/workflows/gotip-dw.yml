@@ -25,10 +25,10 @@ jobs:
     - name: Compress [unix]
       run: mkdir dist && rm -rf $HOME/sdk/gotip/.git && tar czf "dist/gotip-amd64-${{ matrix.os }}.tar.gz" "$HOME/sdk/gotip"
       if: ${{ matrix.os != 'windows-latest' }}
-    - name: get commit id
+    - name: Get go version commit ID
       id: commitid
       run: |
-        echo "::set-output name=content::$(gotip version | grep -oP "[0-9a-f\.\-]{15}")"
+        echo "::set-output name=content::$(gotip version | grep -oE '1\.[^ ]+')"
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
