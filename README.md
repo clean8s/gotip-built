@@ -9,7 +9,7 @@ The mock is tagged as `!gofuzzbeta` so that you get the best of both worlds:
 
 ### Fuzzing inside a GitHub Action
 
-Releases contain a `gotip` build from the `dev.fuzz` branch.
+Releases contain a `gotip` build from the `dev.fuzz` branch for amd64.
 
 ```yaml
 - name: fuzz download
