@@ -1,0 +1,13 @@
+name: gotip
+
+on:
+  workflow_dispatch: {}
+jobs:
+  gotip:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: wget
+      run: wget https://github.com/clean8s/gofuzz/releases/download/v1.18.24.e25afff4/gofuzz_linux_amd64.tar.gz && tar xzf gofuzz_linux_amd64.tar.gz
+    - name: fuzz test
+      run: ./gotip/bin/go help fuzz
