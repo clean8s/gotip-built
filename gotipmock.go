@@ -6,10 +6,21 @@ import (
 	originalTest "testing"
 )
 
+
+// F is a type passed to fuzz targets.
+//
+// A fuzz target may add seed corpus entries using F.Add or by storing files in
+// the testdata/fuzz/<FuzzTargetName> directory. The fuzz target must then
+// call F.Fuzz once to provide a fuzz function. See the testing package
+// documentation for an example, and see the F.Fuzz and F.Add method
+// documentation for details
 type F struct {
 	NoopStruct
 }
 
+// Cleanup registers a function to be called after the fuzz function has been
+// called on all seed corpus entries, and after fuzzing completes (if enabled).
+// Cleanup functions will be called in last added, first called order
 func (f *F) Cleanup(fn func()) {
 
 }
@@ -106,11 +117,17 @@ func (f *F) Add(args ...interface{}) {
 
 }
 
-
-var _noop = func() {}
+// A NoopStruct is used to simulate Go features that aren't available in stable branches.
 type NoopStruct interface{}
 
 type T = originalTest.T
+type B = originalTest.B
+type M = originalTest.M
+
 type TB = originalTest.TB
 type PB = originalTest.PB
-type M = originalTest.M
+type InternalTest = originalTest.InternalTest
+type Cover = originalTest.Cover
+type CoverBlock = originalTest.CoverBlock
+type BenchmarkResult = originalTest.BenchmarkResult
+type InternalExample = originalTest.InternalExample
