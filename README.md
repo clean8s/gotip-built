@@ -19,12 +19,16 @@ The mock is tagged as `!gofuzzbeta` so that you get the best of both worlds:
 ```yaml
 - name: fuzz download
   run: |
-    GOTIP=$(curl -sL https://api.github.com/repos/clean8s/gofuzz/releases/latest | jq -r '.assets[].browser_download_url') \
-    wget $GOTIP && tar xzf gofuzz_linux_amd64.tar.gz
-- run: ./gotip/bin/go test -fuzz .
+    FUZZREPO="https://api.github.com/repos/clean8s/gofuzz/releases/latest"
+    GOTIP=$(curl -sL "$FUZZREPO" | jq -r '.assets[].browser_download_url')
+    wget $GOTIP && tar xzf gotip-amd64-ubuntu-latest.tar.gz
 ```
 
-Add `gotipmock.go` and start writing a fuzzer in any `*_test.go` by naming it `FuzzX(f *F)`:
+To run a fuzzer `$GOROOT="$HOME/gotip" $GOROOT/bin/go test -fuzz .`
+
+---
+
+Example: Add `gotipmock.go` and start writing a fuzzer in any `*_test.go` by naming it `FuzzX(f *F)`:
 
 ```go
 func FuzzSomeFunction(f *F) {
@@ -40,7 +44,7 @@ func FuzzSomeFunction(f *F) {
 }
 ```
 
-`./gotip/bin/go test -fuzz .` will mutate `fuzzString` and try to find an input that crashes your function:
+After invoking `~/gotip/bin/go test -fuzz .`, go test will mutate `fuzzString` and try to find an input that crashes your function:
 ```sh
 ./gotip/bin/go test -fuzz .
 fuzz: elapsed: 18s, execs: 424755 (23583/sec), workers: 4, interesting: 32
