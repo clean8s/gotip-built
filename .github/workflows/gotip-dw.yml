@@ -19,13 +19,13 @@ jobs:
         go-version: 1.17
     - name: Build
       run: go install golang.org/dl/gotip@latest && gotip download "${{ github.event.inputs.gotip }}"
-    - name: windows
+    - name: Compress [windows]
       if: ${{ matrix.os == 'windows-latest' }}
       run: mkdir dist && Remove-Item $HOME\sdk\gotip\.git -Recurse -Force && Compress-Archive -Path $HOME\sdk\gotip -DestinationPath dist/gotip-amd64-windows.zip
-    - name: Compress
-      run: mkdir dist && rm -rf $HOME/sdk/gotip/.git && tar czf "dist/gotip-amd64-${{ matrix.os }}.tar" "$HOME/sdk/gotip"
+    - name: Compress [unix]
+      run: mkdir dist && rm -rf $HOME/sdk/gotip/.git && tar czf "dist/gotip-amd64-${{ matrix.os }}.tar.gz" "$HOME/sdk/gotip"
       if: ${{ matrix.os != 'windows-latest' }}
-    - name: Archive code coverage results
+    - name: Put artifact
       uses: actions/upload-artifact@v2
       with:
         name: gotip-amd64-${{ matrix.os }}
