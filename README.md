@@ -1,15 +1,20 @@
 ### gofuzz
 
-Go fuzzing is not ready in stable branch: [go/tree/dev.fuzz](https://github.com/golang/go/tree/dev.fuzz),
-so this is a mock implementation so that IDEs autocomplete it.
+Go fuzzing is still not in stable Go branch: [go/tree/dev.fuzz](https://github.com/golang/go/tree/dev.fuzz),
+so this is:
+
+1. An up-to-date build of `dev.fuzz`
+2. A mock implementation so that IDEs autocomplete it.
 
 The mock is tagged as `!gofuzzbeta` so that you get the best of both worlds:
 1. if you are actually running `gotip` you can fuzz but mock won't affect it
 2. If you write fuzz code for stable Go in an IDE, it'll type check but not run it.
 
-### Fuzzing inside a GitHub Action
+### Downloading compiled tips inside a GitHub Action
 
-Releases contain a `gotip` build from the `dev.fuzz` branch for amd64.
+[![gotip compile](https://github.com/clean8s/gofuzz/actions/workflows/gotip-dw.yml/badge.svg)](https://github.com/clean8s/gofuzz/actions/workflows/gotip-dw.yml)
+
+`gotip` is very slow so you can use this repo to obtain a precompiled build from the `dev.fuzz` branch for amd64.
 
 ```yaml
 - name: fuzz download
