@@ -1,4 +1,4 @@
-name: Go
+name: Go Tip download
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       gotip:
         default: "dev.fuzz"
 jobs:
-  gotip:
+  gotip-dw:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
