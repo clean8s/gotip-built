@@ -28,5 +28,5 @@ jobs:
     - name: Archive code coverage results
       uses: actions/upload-artifact@v2
       with:
-        name: gotip-amd64-${{ matrix.os }
+        name: gotip-amd64-${{ matrix.os }}
         path: dist
