@@ -1,6 +1,6 @@
 // +build !gofuzzbeta
 
-package fuzz
+package testing
 
 import (
 	originalTest "testing"
