@@ -1,0 +1,32 @@
+name: Go
+
+on:
+  workflow_dispatch:
+    inputs:
+      gotip:
+        default: "dev.fuzz"
+jobs:
+  gotip:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+    - name: Build
+      run: go install golang.org/dl/gotip@latest && gotip download "${{ github.event.inputs.gotip }}"
+    - name: windows
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: mkdir dist && Remove-Item $HOME\sdk\gotip\.git -Recurse -Force && Compress-Archive -Path $HOME\sdk\gotip -DestinationPath dist/gotip-amd64-windows.zip
+    - name: Compress
+      run: mkdir dist && rm -rf $HOME/sdk/gotip/.git && tar czf "dist/gotip-amd64-${{ matrix.os }}.tar" "$HOME/sdk/gotip"
+      if: ${{ matrix.os != 'windows-latest' }}
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v2
+      with:
+        name: gotip-amd64-${{ matrix.os }
+        path: dist
