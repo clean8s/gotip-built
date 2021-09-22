@@ -33,3 +33,9 @@ jobs:
       with:
         files: dist/*
         tag_name: v${{ steps.commitid.outputs.content }}
+    - uses: dev-drprasad/delete-older-releases@v0.2.0
+      name: delete old releases
+      with:
+        keep_latest: 3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
