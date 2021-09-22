@@ -1,9 +1,9 @@
 ### gotip-builds
 
-Go fuzzing is still not in stable Go branch: [go/tree/dev.fuzz](https://github.com/golang/go/tree/dev.fuzz),
+Go fuzzing is still not stable: [go/tree/dev.fuzz](https://github.com/golang/go/tree/dev.fuzz),
 so this is:
 
-1. An up-to-date build of `dev.fuzz`
+1. An up-to-date build of ~~dev.fuzz~~ `master`
 2. A mock implementation so that IDEs autocomplete it.
 
 The mock is tagged as `!gofuzzbeta` so that you get the best of both worlds:
