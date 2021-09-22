@@ -3,10 +3,6 @@ name: Go Tip download
 on:
   schedule:
     - cron: '0 0 * * *'
-  workflow_dispatch:
-    inputs:
-      gotip:
-        default: "dev.fuzz"
 jobs:
   gotip-dw:
     strategy:
@@ -20,7 +16,7 @@ jobs:
       with:
         go-version: 1.17
     - name: Build
-      run: go install golang.org/dl/gotip@latest && gotip download "${{ github.event.inputs.gotip }}"
+      run: go install golang.org/dl/gotip@latest && gotip download
     - name: Compress [windows]
       if: ${{ matrix.os == 'windows-latest' }}
       run: mkdir dist && Remove-Item $HOME\sdk\gotip\.git -Recurse -Force && Compress-Archive -Path $HOME\sdk\gotip -DestinationPath dist/gotip-amd64-windows.zip && choco install -y grep
