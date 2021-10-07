@@ -8,3 +8,5 @@ This repo periodically builds go `master` via GitHub Actions into an archive you
 * Windows: https://github-releases.fikisipi.workers.dev/windows
 * Linux: https://github-releases.fikisipi.workers.dev/linux
 * Mac: https://github-releases.fikisipi.workers.dev/mac
+
+Unzip the archive, set `$GOROOT` and you are ready to go.
