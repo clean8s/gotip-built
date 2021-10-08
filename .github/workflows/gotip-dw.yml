@@ -19,7 +19,7 @@ jobs:
     - name: Build
       run: go install golang.org/dl/gotip@latest && gotip download
     - name: Setup dist [unix]
-      run:  mkdir dist && rm -rf $HOME/sdk/gotip/.git && python3 -m pip install lz4tools && lz4toolsCli "$HOME/sdk/gotip" "dist/gotip-amd64-${{ matrix.os }}.tar.lz4"
+      run:  mkdir dist && rm -rf $HOME/sdk/gotip/.git && mv $HOME/sdk/gotip . && python3 -m pip install lz4tools && lz4toolsCli ./gotip "dist/gotip-amd64-${{ matrix.os }}.tar.lz4"
       if: ${{ matrix.os != 'windows-latest' }}
     - name: Setup dist [windows]
       run: mkdir dist && Remove-Item $HOME\sdk\gotip\.git -Recurse -Force && choco install archiver && arc archive "dist/gotip-amd64-${{ matrix.os }}.tar.lz4" "$HOME/sdk/gotip"
