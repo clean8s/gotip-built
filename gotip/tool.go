@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"runtime"
 	"net/http"
+	"fmt"
 )
 
 func IsExecAny(mode os.FileMode) bool {
@@ -27,14 +28,13 @@ func main() {
 
 	newgopath := filepath.Join(oldgobin, "tipbuilt")
 	os.Mkdir(newgopath, os.ModeDir)
-	os.Chdir(newgopath)
 
-	gtip, err := os.Stat("gotip")
+	gtip, err := os.Stat(filepath.Join(newgopath, "gotip"))
 	if err != nil || !gtip.IsDir() {
-		extract()
+		extract(newgopath)
 	}
 
-	bins := filepath.Join("gotip", "bin")
+	bins := filepath.Join(newgopath, "gotip", "bin")
 	entries, _ := os.ReadDir(bins)
 	found := ""
 	for _, binEntry := range entries {
@@ -54,6 +54,7 @@ func callgo(exe string, gopath string, workdir string) {
 	os.Setenv("GOPATH", gopath)
 	os.Setenv("GOROOT", filepath.Join(gopath, "gotip"))
 	os.Setenv("GOBIN", filepath.Join(gopath, "..", "bin"))
+	fmt.Println(exe, gopath)
 	g.Stdout = os.Stdout
 	g.Stderr = os.Stderr
 	g.Stdin = os.Stdin
@@ -85,7 +86,7 @@ var SUPPORTED_ARCH = map[string]bool {
 	"amd64": true,
 }
 
-func extract() {
+func extract(gopath string) {
 	thisOs := runtime.GOOS
 	if thisOs == "darwin" {
 		thisOs = "mac"
@@ -122,6 +123,7 @@ func extract() {
 		if err != nil {
 			log.Fatalf("ExtractTarGz: Next() failed: %s", err.Error())
 		}
+		header.Name = filepath.Join(gopath, header.Name)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
