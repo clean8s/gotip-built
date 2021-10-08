@@ -27,7 +27,7 @@ jobs:
     - name: Get go version commit ID
       id: commitid
       run: |
-        echo "::set-output name=content::$(gotip version | grep -oE '1\.[^ ]+')"
+        echo "::set-output name=content::$(./gotip/bin/go version | grep -oE '1\.[^ ]+')"
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
