@@ -25,7 +25,7 @@ jobs:
       run: mkdir dist && Remove-Item $HOME\sdk\gotip\.git -Recurse -Force
       if: ${{ matrix.os == 'windows-latest' }}
     - name: Compress
-      run: python3 -m pip install lz4tools && lz4toolsCli "$HOME/sdk/gotip" "dist/gotip-amd64-${{ matrix.os }}.tar.gz"
+      run: python3 -m pip install lz4tools && lz4toolsCli "$HOME/sdk/gotip" "dist/gotip-amd64-${{ matrix.os }}.tar.lz4"
     - name: Get go version commit ID
       id: commitid
       run: |
