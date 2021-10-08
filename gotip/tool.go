@@ -6,7 +6,6 @@ import (
 	"github.com/pierrec/lz4/v4"
 	"archive/tar"
 	"os"
-	"github.com/pterm/pterm"
 	"path/filepath"
 	"strings"
 	"os/exec"
@@ -15,11 +14,9 @@ import (
 	"runtime"
 	"net/http"
 	"fmt"
+	"time"
+	"bufio"
 )
-
-func IsExecAny(mode os.FileMode) bool {
-	return mode&0111 != 0
-}
 
 func main() {
 	origdir, _ := os.Getwd()
@@ -27,11 +24,31 @@ func main() {
 	oldgobin, _ = filepath.Split(oldgobin)
 
 	newgopath := filepath.Join(oldgobin, "tipbuilt")
-	os.Mkdir(newgopath, os.ModeDir)
+	if len(os.Args) > 1 && os.Args[1] == "fetch" {
+		err := os.Mkdir(newgopath, os.ModeDir)
+		if err != nil {
+			if os.IsExist(err) {
+				fmt.Printf("Warning: there's an already installed version.\nDo you want to overwrite? [y/n]: ")
+				S := bufio.NewScanner(os.Stdin)
+				S.Scan()
+				if strings.TrimSpace(S.Text()) != "y" {
+					os.Exit(1)
+				}
+			} else {
+				fmt.Printf("failed creating gotip dir: %s\n", err.Error())
+				os.Exit(1)
+			}
+			os.RemoveAll(newgopath)
+			os.Mkdir(newgopath, os.ModeDir)
+		}
+		extract(newgopath)
+		os.Exit(0)
+	}
 
 	gtip, err := os.Stat(filepath.Join(newgopath, "gotip"))
 	if err != nil || !gtip.IsDir() {
-		extract(newgopath)
+		fmt.Println("Warning: compiled release not downloaded yet, please run 'gotip fetch'!")
+		os.Exit(1)
 	}
 
 	bins := filepath.Join(newgopath, "gotip", "bin")
@@ -54,15 +71,17 @@ func callgo(exe string, gopath string, workdir string) {
 	os.Setenv("GOPATH", gopath)
 	os.Setenv("GOROOT", filepath.Join(gopath, "gotip"))
 	os.Setenv("GOBIN", filepath.Join(gopath, "..", "bin"))
-	fmt.Println(exe, gopath)
+
 	g.Stdout = os.Stdout
 	g.Stderr = os.Stderr
 	g.Stdin = os.Stdin
 	g.Dir = workdir
 	//g.Env = os.Environ()
-
+	var sigResult os.Signal
 	defer func() {
-		if g.Process != nil {
+		if g.Process != nil && sigResult != nil {
+			g.Process.Signal(sigResult)
+		} else {
 			g.Process.Kill()
 		}
 	}()
@@ -76,7 +95,8 @@ func callgo(exe string, gopath string, workdir string) {
 		g.Run()
 		sigc <- nil
 	}()
-	<-sigc
+
+	sigResult = <-sigc
 }
 
 var SUPPORTED_OS = map[string]bool {
@@ -92,7 +112,7 @@ func extract(gopath string) {
 		thisOs = "mac"
 	}
 	if !SUPPORTED_OS[thisOs] || !SUPPORTED_ARCH[runtime.GOARCH] {
-		pterm.Fatal.Println("Only Linux, Windows & Mac with amd64 are supported.")
+		log.Fatalln("Only Linux, Windows & Mac with amd64 are supported.")
 	}
 
 	uri := "https://github-releases.fikisipi.workers.dev/" + thisOs
@@ -103,12 +123,38 @@ func extract(gopath string) {
 	data := lz4.NewReader(archiveFile)
 	tarReader := tar.NewReader(data)
 
-	expectedSize := int(3 * archiveReq.ContentLength)
-	progress, _ := pterm.DefaultProgressbar.WithShowCount(false).
-		WithShowPercentage(true).WithShowElapsedTime(true).
-		WithTotal(expectedSize).WithTitle("Downloading precompiled binary...").Start()
-	progress.Total = expectedSize
+	expectedSize := int(2 * archiveReq.ContentLength)
+	currentSize := 0
+	lastProgress := -15.0
+	tm := time.Now()
+	draw := func(prog int) float64{
+		dt := time.Now().Sub(tm)
+		currentSize += prog
+		if currentSize > expectedSize {
+			currentSize = expectedSize
+		}
+		progress := float64(currentSize) / float64(expectedSize)
+		{
+			dots := "."
+			n := currentSize * 10 / expectedSize
+			dots += strings.Repeat(".", n)
+			dots += strings.Repeat(" ", 10 - n)
+			K := fmt.Sprintf("Downloading precompiled bin (%.1f" + "%%" + " in %ds)", progress * 100, int(dt.Seconds()))
+			fmt.Printf("%-40s |%s|\r", K, dots)
+			lastProgress = progress
+		}
+		return progress
+	}
 
+	go func() {
+		for {
+			nowFrac := draw(0)
+			if nowFrac > 0.8 {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+	}()
 	for true {
 		header, err := tarReader.Next()
 
@@ -116,9 +162,7 @@ func extract(gopath string) {
 			break
 		}
 
-		if progress.Current+int(header.Size) <= progress.Total {
-			progress.Add(int(header.Size))
-		}
+		draw(int(header.Size))
 
 		if err != nil {
 			log.Fatalf("ExtractTarGz: Next() failed: %s", err.Error())
@@ -147,7 +191,5 @@ func extract(gopath string) {
 				header.Name)
 		}
 	}
-	progress.Add(progress.Total - progress.Current)
-	progress.Stop()
 
 }
