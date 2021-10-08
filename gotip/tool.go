@@ -81,7 +81,7 @@ func callgo(exe string, gopath string, workdir string) {
 	defer func() {
 		if g.Process != nil && sigResult != nil {
 			g.Process.Signal(sigResult)
-		} else {
+		} else if g.Process != nil {
 			g.Process.Kill()
 		}
 	}()
