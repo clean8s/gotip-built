@@ -1,11 +1,11 @@
-### Daily builds of golang dev/gotip 
+### Prebuilt dev builds for golang 
 
 Using [gotip](https://pkg.go.dev/golang.org/dl/gotip) to compile dev versions of go can delay
 CI/unit tests for **4+ minutes**
 as it goes through the whole toolchain compiling process. 
 
 <p align="center">
-  This repo fixes that by storing precompiled daily gotip builds: <br/>
+  This repo compiles go on a daily basis so you can try dev features in an instant: <br/>
   <img src="./gotip-scr.png" width="60%" />
 </p>
 
