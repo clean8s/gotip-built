@@ -16,9 +16,9 @@ As of October, the most useful features merged on master are [fuzz testing](http
 go install github.com/clean8s/gotip-built/gotip@latest
 gotip download
 ```
-Then you can use gotip as usual `go`: `gotip get ...`, `gotip mod tidy`, ... You can always check what the tip `GOROOT` is with `gotip env`
+Then you can use gotip as usual `go`: `gotip get ...`, `gotip mod tidy`, ... To configure an IDE, you can always check what the tip `GOROOT` is with `gotip env`
 
-**Alternative**: You can also manually extract the build from the [GitHub Releases](https://github.com/clean8s/gotip-built/releases) and put it in your $PATH.
+**Alternative**: You can also manually extract the build from the [GitHub Releases](https://github.com/clean8s/gotip-built/releases) and put it in your $PATH and $GOROOT.
 
 ---
 
