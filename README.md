@@ -6,7 +6,7 @@ as it goes through the whole toolchain compiling process.
 
 <p align="center">
   This repo fixes that by storing precompiled daily gotip builds: <br/>
-  <img src="./gotip-scr.png" width="70%" />
+  <img src="./gotip-scr.png" width="60%" />
 </p>
 
 As of October, the most useful gotip features are [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics). Note that gotip is **made for golang devs, and certainly not ready for production.**
