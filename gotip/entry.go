@@ -115,7 +115,7 @@ func callgo(paths Paths) {
 	}
 
 	g := exec.Command(exe, os.Args[1:]...)
-	os.Setenv("GOPATH", paths.GoPath)
+	err := os.Setenv("GOPATH", paths.GoPath)
 	os.Setenv("GOROOT", paths.GoRoot)
 	os.Setenv("GOBIN", paths.GoBin)
 
@@ -125,12 +125,16 @@ func callgo(paths Paths) {
 	//g.Env = os.Environ()
 	var sigResult os.Signal
 	defer func() {
+		if err != nil {
+			fmt.Printf("go exec err: ", err)
+		}
 		if g.Process != nil && sigResult != nil {
 			g.Process.Signal(sigResult)
 		} else if g.Process != nil {
 			g.Process.Kill()
 		}
 	}()
+
 	sigc := make(chan os.Signal, 2)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
@@ -138,7 +142,7 @@ func callgo(paths Paths) {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	go func() {
-		g.Run()
+		err = g.Run()
 		sigc <- nil
 	}()
 
@@ -251,7 +255,7 @@ func extract(gopath string, newP Paths) {
 			log.Fatalf("extract: Next() failed: %s", err.Error())
 		}
 		draw(int(header.Size))
-		
+
 		header.Name = filepath.Join(gopath, header.Name)
 
 		switch header.Typeflag {
