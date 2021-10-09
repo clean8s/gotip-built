@@ -2,21 +2,23 @@
 
 Using [gotip](https://pkg.go.dev/golang.org/dl/gotip) to install dev versions of go can delay
 CI/unit tests for **4+ minutes**
-as it goes through the whole toolchain compiling process.
+as it goes through the whole toolchain compiling process. 
 
 <p align="center">
   This repo fixes that by storing precompiled daily gotip builds: <br/>
   <img src="./gotip-scr.png" width="50%" />
 </p>
 
+As of October, the most useful gotip features are [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics).
+
 💾**Installation**:
 ```bash
 go install github.com/clean8s/gotip-built/gotip@latest
 gotip download
 ```
-Then you can use it as usual `go`: `gotip install`, `gotip mod tidy`, ...
+Then you can use gotip as usual `go`: `gotip install`, `gotip mod tidy`, ...
 
-As of October, the most useful merged feature is [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics).
+**You can also manually extract the build from the [GitHub Releases](https://github.com/clean8s/gotip-built/releases).**
 
 ---
 
