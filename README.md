@@ -18,7 +18,7 @@ gotip download
 ```
 Then you can use gotip as usual `go`: `gotip install`, `gotip mod tidy`, ...
 
-**You can also manually extract the build from the [GitHub Releases](https://github.com/clean8s/gotip-built/releases), if you set your PATH, GOROOT and GOPATH manually.**
+You can also manually extract the build from the [GitHub Releases](https://github.com/clean8s/gotip-built/releases), if you set your PATH, GOROOT and GOPATH manually.
 
 ---
 
