@@ -41,13 +41,17 @@ func (paths Paths) String() string {
 
 func oldPaths() Paths {
 	oldGobin := os.Args[0]
-	if !strings.Contains(oldGobin, string(rune(os.PathSeparator))) {
+	// Unix tends to give an incomplete path for argv[0]
+	if !filepath.IsAbs(oldGobin) {
+		// you have to instead read the symlink of self
+		// to get the full argv[0] (i.e. the path of the current bin)
 		procFullPath, err := os.Readlink("/proc/self/exe")
-		if err != nil {
+		if err == nil {
 			oldGobin = filepath.Dir(procFullPath)
 		}
+	} else {
+		oldGobin, _ = filepath.Split(oldGobin)
 	}
-	oldGobin, _ = filepath.Split(oldGobin)
 	oldGoRoot := filepath.Dir(oldGobin)
 	oldGoPath := filepath.Dir(oldGoRoot)
 	return Paths{
@@ -73,6 +77,7 @@ func main() {
 	newP := newPaths(oldP)
 
 	if len(os.Args) > 1 && os.Args[1] == "download" {
+		fmt.Printf("Expected paths: %s\n", newP)
 		err := os.Mkdir(newP.GoPath, os.ModeDir)
 		if err != nil {
 			if os.IsExist(err) {
@@ -175,7 +180,6 @@ func (hasher *hashInterceptReader) Read(p []byte) (n int, err error) {
 }
 
 func extract(gopath string, newP Paths) {
-	fmt.Printf("Expected paths: %s\n", newP)
 	thisOs := runtime.GOOS
 	if thisOs == "darwin" {
 		thisOs = "mac"
@@ -250,7 +254,7 @@ func extract(gopath string, newP Paths) {
 				hasher.Read(make([]byte, potentiallyRead - actuallyRead))
 			}
 			shasum := hasher.sha256.Sum(nil)
-			fmt.Printf("Done, SHA256 is: %x", shasum)
+			fmt.Printf("Done, SHA256 is: %x\n", shasum)
 			os.WriteFile(filepath.Join(newP.GoPath, ".tipsuccess"), []byte(fmt.Sprintf("%s\n%x", fileName, shasum)), os.ModePerm)
 			break
 		}
@@ -270,6 +274,7 @@ func extract(gopath string, newP Paths) {
 			}
 		case tar.TypeReg:
 			outFile, err := os.Create(header.Name)
+			outFile.Chmod(os.FileMode(header.Mode))
 			if err != nil {
 				log.Fatalf("extract: Create() failed: %s", err.Error())
 			}
