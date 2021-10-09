@@ -176,6 +176,14 @@ func extract(gopath string, newP Paths) {
 	if !SUPPORTED_OS[thisOs] || !SUPPORTED_ARCH[runtime.GOARCH] {
 		log.Fatalln("Only Linux, Windows & Mac with amd64 are supported.")
 	}
+
+	// GitHub lets you do GET .json of the releases, but the
+	// assets/artifacts in releases cannot be downloaded without a browser.
+	// (most likely due to abuse prevention).
+
+	// scripts that need an artifact have another option:
+	// send an auth token and you can download anything.
+	// this worker periodically does download artifacts with a personal token.
 	
 	uri := "https://github-releases.fikisipi.workers.dev/" + thisOs
 	archiveReq, _ := http.Get(uri)
