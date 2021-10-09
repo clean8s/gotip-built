@@ -2,7 +2,7 @@
 
 Using `gotip` to run a dev version of go can delay
 CI/unit tests for **4+ minutes**
-since it isn't cached and goes through the whole toolchain process all the time.
+as it goes through the whole toolchain compiling process.
 
 This repo fixes that by storing precompiled daily gotip builds.
 
