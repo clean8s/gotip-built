@@ -184,9 +184,12 @@ func extract(gopath string, newP Paths) {
 	// scripts that need an artifact have another option:
 	// send an auth token and you can download anything.
 	// this worker periodically does download artifacts with a personal token.
-	
+
 	uri := "https://github-releases.fikisipi.workers.dev/" + thisOs
-	archiveReq, _ := http.Get(uri)
+	archiveReq, err := http.Get(uri)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	archiveFile := archiveReq.Body
 
 	hasher := &hashInterceptReader{sourceReader: archiveFile}
@@ -243,11 +246,12 @@ func extract(gopath string, newP Paths) {
 			break
 		}
 
-		draw(int(header.Size))
 
 		if err != nil {
 			log.Fatalf("extract: Next() failed: %s", err.Error())
 		}
+		draw(int(header.Size))
+		
 		header.Name = filepath.Join(gopath, header.Name)
 
 		switch header.Typeflag {
