@@ -7,7 +7,6 @@ import (
 	"archive/tar"
 	"os"
 	"path/filepath"
-	"strings"
 	"os/exec"
 	"os/signal"
 	"syscall"
@@ -36,7 +35,7 @@ func (p Paths) JoinInPath(paths ...string) string {
 }
 
 func (paths Paths) String() string {
-	return fmt.Sprintf("GOPATH: %#v GOROOT: %#v GOBIN: %#v", paths.GoPath, paths.GoRoot, paths.GoBin)
+	return fmt.Sprintf("  GOPATH: %#v\n  GOROOT: %#v\n  GOBIN: %#v", paths.GoPath, paths.GoRoot, paths.GoBin)
 }
 
 func getCurrentGoBin() string {
@@ -73,7 +72,7 @@ func main() {
 	newP := newPaths(standardGobin)
 
 	if len(os.Args) > 1 && os.Args[1] == "download" {
-		fmt.Printf("Expected paths: %s\n", newP)
+		fmt.Printf("Installation targets:\n%s\n", newP)
 		err := os.Mkdir(newP.GoPath, os.ModeDir)
 		if err != nil {
 			if os.IsExist(err) {
@@ -218,46 +217,23 @@ func extract(gopath string, newP Paths) {
 	data := lz4.NewReader(hasher)
 	tarReader := tar.NewReader(data)
 
-	estimatedSize := int(2 * archiveReq.ContentLength)
-	currentSize := 0
-	lastProgress := 0.0
-	tm := time.Now()
-	drawProgress := func(prog int) float64 {
-		dt := time.Now().Sub(tm)
-		currentSize += prog
-		if currentSize > estimatedSize {
-			currentSize = estimatedSize
-		}
-		progress := float64(currentSize) / float64(estimatedSize)
-		{
-			dots := "."
-			n := currentSize * 10 / estimatedSize
-			dots += strings.Repeat(".", n)
-			dots += strings.Repeat(" ", 10-n)
-			K := fmt.Sprintf("Downloading and installing (%.1f"+"%%"+" in %ds)", progress*100, int(dt.Seconds()))
-			fmt.Printf("%-40s |%s|\r", K, dots)
-			lastProgress = progress
-		}
-		_ = lastProgress
-		return progress
-	}
-
-	var refreshThreshold = 0.8
+	bar := NewProgressBar(2 * archiveReq.ContentLength)
 
 	go func() {
 		// refresh screen with progress bar
 		for {
-			nowFrac := drawProgress(0)
-			if nowFrac > refreshThreshold {
+			bar.Draw()
+			if !bar.ShouldRedraw() {
 				break
 			}
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 350)
 		}
 	}()
 	for true {
 		header, err := tarReader.Next()
 
 		if err == io.EOF {
+			bar.stop = true
 			// there can be lz4 end block that's skipped
 			// but you have to read it to properly calculate the hash
 			actuallyRead, potentiallyRead := hasher.readByteCount, int(archiveReq.ContentLength)
@@ -265,7 +241,7 @@ func extract(gopath string, newP Paths) {
 				hasher.Read(make([]byte, potentiallyRead - actuallyRead))
 			}
 			shasum := hasher.sha256.Sum(nil)
-			fmt.Printf("\nDone, SHA256 is: %x\n", shasum)
+			fmt.Printf("\nSuccessfully extracted and installed! SHA256 of lz4 archive is: %x\n", shasum)
 			fmt.Printf(`You can use gotip with any go command now. Start with 'gotip help' or 'gotip version'`)
 			os.WriteFile(filepath.Join(newP.GoPath, ".tipsuccess"), []byte(fmt.Sprintf("%s\n%x", fileName, shasum)), os.ModePerm)
 			break
@@ -275,7 +251,8 @@ func extract(gopath string, newP Paths) {
 		if err != nil {
 			log.Fatalf("\nextract: Next() failed: %s", err.Error())
 		}
-		drawProgress(int(header.Size))
+
+		bar.Increment(header.Size)
 
 		header.Name = filepath.Join(gopath, header.Name)
 
