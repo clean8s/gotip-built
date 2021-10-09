@@ -22,7 +22,7 @@ import (
 const CLI_VERSION = "4.0"
 
 func printCliVersion() {
-	fmt.Printf("cli version %s env %s\n", CLI_VERSION, newPaths(oldPaths()))
+	fmt.Printf("cli version %s env %s\n", CLI_VERSION, newPaths(getCurrentGoBin()))
 }
 
 type Paths struct {
@@ -39,30 +39,26 @@ func (paths Paths) String() string {
 	return fmt.Sprintf("GOPATH: %#v GOROOT: %#v GOBIN: %#v", paths.GoPath, paths.GoRoot, paths.GoBin)
 }
 
-func oldPaths() Paths {
-	oldGobin := os.Args[0]
+func getCurrentGoBin() string {
+	argvPath := os.Args[0]
 	// Unix tends to give an incomplete path for argv[0]
-	if !filepath.IsAbs(oldGobin) {
+	if !filepath.IsAbs(argvPath) {
 		// you have to instead read the symlink of self
 		// to get the full argv[0] (i.e. the path of the current bin)
 		procFullPath, err := os.Readlink("/proc/self/exe")
 		if err == nil {
-			oldGobin = filepath.Dir(procFullPath)
+			argvPath = filepath.Dir(procFullPath)
 		}
 	} else {
-		oldGobin, _ = filepath.Split(oldGobin)
+		// split into (dir)/(file)
+		argvPath, _ = filepath.Split(argvPath)
 	}
-	oldGoRoot := filepath.Dir(oldGobin)
-	oldGoPath := filepath.Dir(oldGoRoot)
-	return Paths{
-		GoPath: oldGoPath,
-		GoRoot: oldGoRoot,
-		GoBin:  oldGobin,
-	}
+	gobin := argvPath
+	return gobin
 }
 
-func newPaths(oldP Paths) Paths {
-	newGoPath := filepath.Join(oldP.GoBin, "gotip-built")
+func newPaths(standardGoBin string) Paths {
+	newGoPath := filepath.Join(standardGoBin, "gotip-built")
 	newGoRoot := filepath.Join(newGoPath, "gotip")
 	newGoBin := filepath.Join(newGoRoot, "bin")
 	return Paths{
@@ -73,21 +69,28 @@ func newPaths(oldP Paths) Paths {
 }
 
 func main() {
-	oldP := oldPaths()
-	newP := newPaths(oldP)
+	standardGobin := getCurrentGoBin()
+	newP := newPaths(standardGobin)
 
 	if len(os.Args) > 1 && os.Args[1] == "download" {
 		fmt.Printf("Expected paths: %s\n", newP)
 		err := os.Mkdir(newP.GoPath, os.ModeDir)
 		if err != nil {
 			if os.IsExist(err) {
-				//fmt.Printf("Will overwrite existing install\n")
+				err := os.RemoveAll(newP.GoPath)
+				if err != nil {
+					fmt.Printf("Tried to recreate %#v but got an error: %s\n", newP.GoPath, err.Error())
+					os.Exit(1)
+				}
 			} else {
 				fmt.Printf("failed creating gotip dir: %s\n", err.Error())
 				os.Exit(1)
 			}
-			os.RemoveAll(newP.GoPath)
-			os.Mkdir(newP.GoPath, os.ModeDir)
+			err = os.Mkdir(newP.GoPath, os.ModeDir)
+			if err != nil {
+				fmt.Printf("Tried to create %#v but got an error: %s\n", newP.GoPath, err.Error())
+				os.Exit(1)
+			}
 		}
 		extract(newP.GoPath, newP)
 		os.Exit(0)
@@ -95,7 +98,7 @@ func main() {
 
 	gtip, err := os.Stat(newP.GoBin)
 	if err != nil || !gtip.IsDir() {
-		fmt.Println("Warning: compiled release not downloaded yet, please run 'gotip download'!")
+		fmt.Println("Compiled release not downloaded yet, please run 'gotip download'")
 		os.Exit(1)
 	}
 
@@ -106,7 +109,6 @@ func main() {
 	}
 
 	callgo(newP)
-
 }
 
 func callgo(paths Paths) {
@@ -118,9 +120,14 @@ func callgo(paths Paths) {
 	}
 
 	g := exec.Command(exe, os.Args[1:]...)
-	os.Setenv("GOPATH", paths.GoPath)
-	os.Setenv("GOROOT", paths.GoRoot)
-	os.Setenv("GOBIN", paths.GoBin)
+	envErr := os.Setenv("GOPATH", paths.GoPath)
+	envErr = os.Setenv("GOROOT", paths.GoRoot)
+	envErr = os.Setenv("GOBIN", paths.GoBin)
+
+	if envErr != nil {
+		fmt.Printf("Failed setting env: %s\n", envErr.Error())
+		os.Exit(1)
+	}
 
 	g.Stdout = os.Stdout
 	g.Stderr = os.Stderr
@@ -165,8 +172,8 @@ var SUPPORTED_ARCH = map[string]bool{
 
 type hashInterceptReader struct {
 	sourceReader io.Reader
-	sha256       hash.Hash
-	readbytes int
+	sha256        hash.Hash
+	readByteCount int
 }
 
 func (hasher *hashInterceptReader) Read(p []byte) (n int, err error) {
@@ -174,7 +181,7 @@ func (hasher *hashInterceptReader) Read(p []byte) (n int, err error) {
 		hasher.sha256 = sha256.New()
 	}
 	n, err = hasher.sourceReader.Read(p)
-	hasher.readbytes += n
+	hasher.readByteCount += n
 	hasher.sha256.Write(p[:n])
 	return
 }
@@ -204,29 +211,30 @@ func extract(gopath string, newP Paths) {
 	archiveFile := archiveReq.Body
 	path, _ := filepath.Split(archiveReq.Request.URL.Path)
 	fileName := filepath.Base(path)
-	fmt.Printf("Fetching precompiled release: %s\n", fileName)
+	archMegabyteSize := float64(archiveReq.ContentLength) / 1e6
+	fmt.Printf("Last GitHub precompiled release: %s size: %.1fMB\n", fileName, archMegabyteSize)
 	hasher := &hashInterceptReader{sourceReader: archiveFile}
 
 	data := lz4.NewReader(hasher)
 	tarReader := tar.NewReader(data)
 
-	expectedSize := int(2 * archiveReq.ContentLength)
+	estimatedSize := int(2 * archiveReq.ContentLength)
 	currentSize := 0
-	lastProgress := -15.0
+	lastProgress := 0.0
 	tm := time.Now()
-	draw := func(prog int) float64 {
+	drawProgress := func(prog int) float64 {
 		dt := time.Now().Sub(tm)
 		currentSize += prog
-		if currentSize > expectedSize {
-			currentSize = expectedSize
+		if currentSize > estimatedSize {
+			currentSize = estimatedSize
 		}
-		progress := float64(currentSize) / float64(expectedSize)
+		progress := float64(currentSize) / float64(estimatedSize)
 		{
 			dots := "."
-			n := currentSize * 10 / expectedSize
+			n := currentSize * 10 / estimatedSize
 			dots += strings.Repeat(".", n)
 			dots += strings.Repeat(" ", 10-n)
-			K := fmt.Sprintf("Downloading precompiled bin (%.1f"+"%%"+" in %ds)", progress*100, int(dt.Seconds()))
+			K := fmt.Sprintf("Downloading and installing (%.1f"+"%%"+" in %ds)", progress*100, int(dt.Seconds()))
 			fmt.Printf("%-40s |%s|\r", K, dots)
 			lastProgress = progress
 		}
@@ -234,10 +242,13 @@ func extract(gopath string, newP Paths) {
 		return progress
 	}
 
+	var refreshThreshold = 0.8
+
 	go func() {
+		// refresh screen with progress bar
 		for {
-			nowFrac := draw(0)
-			if nowFrac > 0.8 {
+			nowFrac := drawProgress(0)
+			if nowFrac > refreshThreshold {
 				break
 			}
 			time.Sleep(time.Second)
@@ -249,46 +260,46 @@ func extract(gopath string, newP Paths) {
 		if err == io.EOF {
 			// there can be lz4 end block that's skipped
 			// but you have to read it to properly calculate the hash
-			actuallyRead, potentiallyRead := hasher.readbytes, int(archiveReq.ContentLength)
+			actuallyRead, potentiallyRead := hasher.readByteCount, int(archiveReq.ContentLength)
 			if actuallyRead < potentiallyRead {
 				hasher.Read(make([]byte, potentiallyRead - actuallyRead))
 			}
 			shasum := hasher.sha256.Sum(nil)
-			fmt.Printf("Done, SHA256 is: %x\n", shasum)
+			fmt.Printf("\nDone, SHA256 is: %x\n", shasum)
+			fmt.Printf(`You can use gotip with any go command now. Start with 'gotip help' or 'gotip version'`)
 			os.WriteFile(filepath.Join(newP.GoPath, ".tipsuccess"), []byte(fmt.Sprintf("%s\n%x", fileName, shasum)), os.ModePerm)
 			break
 		}
 
 
 		if err != nil {
-			log.Fatalf("extract: Next() failed: %s", err.Error())
+			log.Fatalf("\nextract: Next() failed: %s", err.Error())
 		}
-		draw(int(header.Size))
+		drawProgress(int(header.Size))
 
 		header.Name = filepath.Join(gopath, header.Name)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.Mkdir(header.Name, 0755); err != nil {
-				log.Fatalf("extract: Mkdir() failed: %s", err.Error())
+				log.Fatalf("\nextract: Mkdir() failed: %s", err.Error())
 			}
 		case tar.TypeReg:
 			outFile, err := os.Create(header.Name)
 			outFile.Chmod(os.FileMode(header.Mode))
 			if err != nil {
-				log.Fatalf("extract: Create() failed: %s", err.Error())
+				log.Fatalf("\nextract: Create() failed: %s", err.Error())
 			}
 			if _, err := io.Copy(outFile, tarReader); err != nil {
-				log.Fatalf("extract: Copy() failed: %s", err.Error())
+				log.Fatalf("\nextract: Copy() failed: %s", err.Error())
 			}
 			outFile.Close()
 
 		default:
 			log.Fatalf(
-				"extract: unknown type: %b in %s",
+				"\nextract: unknown type: %b in %s",
 				header.Typeflag,
 				header.Name)
 		}
 	}
-
 }
