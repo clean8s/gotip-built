@@ -126,7 +126,11 @@ func callgo(paths Paths) {
 	var sigResult os.Signal
 	defer func() {
 		if err != nil {
-			fmt.Printf("go exec err: ", err)
+			if newErr, ok := err.(*exec.ExitError); ok {
+				os.Exit(newErr.ExitCode())
+			} else {
+				fmt.Printf("go exec err:", err)
+			}
 		}
 		if g.Process != nil && sigResult != nil {
 			g.Process.Signal(sigResult)
