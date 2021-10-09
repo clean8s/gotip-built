@@ -1,4 +1,4 @@
-### Precompiled dev versions of golang
+### Daily builds of golang dev/gotip 
 
 Using [gotip](https://pkg.go.dev/golang.org/dl/gotip) to install dev versions of go can delay
 CI/unit tests for **4+ minutes**
