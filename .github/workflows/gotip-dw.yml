@@ -17,7 +17,7 @@ jobs:
       with:
         go-version: 1.17
     - name: Build
-      run: go install golang.org/dl/gotip@latest && gotip download
+      run: cd $HOME && go install golang.org/dl/gotip@latest && gotip download
     - name: Setup dist [unix]
       run:  rm -r ./gotip && mkdir dist && rm -rf $HOME/sdk/gotip/.git && mv $HOME/sdk/gotip . && python3 -m pip install lz4tools && lz4toolsCli ./gotip "dist/gotip-amd64-${{ matrix.os }}.tar.lz4"
       if: ${{ matrix.os != 'windows-latest' }}
@@ -27,7 +27,7 @@ jobs:
     - name: Get go version commit ID
       id: commitid
       run: |
-        echo "::set-output name=content::$(./gotip/bin/go version | grep -oE '1\.[^ ]+')"
+        echo "::set-output name=content::$(cd $HOME/sdk && ./gotip version | grep -oE '1\.[^ ]+')"
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
