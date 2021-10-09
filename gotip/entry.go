@@ -41,6 +41,12 @@ func (paths Paths) String() string {
 
 func oldPaths() Paths {
 	oldGobin := os.Args[0]
+	if !strings.Contains(oldGobin, string(rune(os.PathSeparator))) {
+		procFullPath, err := os.Readlink("/proc/self/exe")
+		if err != nil {
+			oldGobin = filepath.Dir(procFullPath)
+		}
+	}
 	oldGobin, _ = filepath.Split(oldGobin)
 	oldGoRoot := filepath.Dir(oldGobin)
 	oldGoPath := filepath.Dir(oldGoRoot)
