@@ -9,7 +9,7 @@ as it goes through the whole toolchain compiling process.
   <img src="./gotip-scr.png" width="50%" />
 </p>
 
-As of October, the most useful gotip features are [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics).
+As of October, the most useful gotip features are [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics). Note that gotip is **made for golang devs, and certainly not ready for production.**
 
 💾**Installation**:
 ```bash
