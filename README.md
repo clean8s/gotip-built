@@ -11,7 +11,7 @@ as it goes through the whole toolchain compiling process.
 
 💾**Installation**:
 ```bash
-go install github.com/clean8s/gotip-built/gotip@master
+go install github.com/clean8s/gotip-built/gotip@latest
 gotip download
 ```
 Then you can use it as usual `go`: `gotip install`, `gotip mod tidy`, ...
