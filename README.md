@@ -35,4 +35,4 @@ the [GitHub Action](https://github.com/clean8s/gotip-built/actions/workflows/got
 * windows_amd64
 * linux_amd64
  
-Looking for ARM64 pull requests!
+Looking for ARM64 pull requests! The current action is a bit messy since it uses Powershell and Bash at the same time, so it should get refactored into a tidier Makefile or a go tool.
