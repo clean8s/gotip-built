@@ -14,7 +14,6 @@ import (
 	"runtime"
 	"fmt"
 	"time"
-	"bufio"
 	"hash"
 	"crypto/sha256"
 	"net/http"
@@ -71,14 +70,7 @@ func main() {
 		err := os.Mkdir(newP.GoPath, os.ModeDir)
 		if err != nil {
 			if os.IsExist(err) {
-				v, _ := exec.Command(newP.JoinInPath("gotip", "bin", "go"), "version").Output()
-				versionClean := strings.TrimSpace(string(v))
-				fmt.Printf("Warning: there's an already installed version: %#v\nDo you want to overwrite? [y/n]: ", versionClean)
-				S := bufio.NewScanner(os.Stdin)
-				S.Scan()
-				if strings.TrimSpace(S.Text()) != "y" {
-					os.Exit(1)
-				}
+				//fmt.Printf("Will overwrite existing install\n")
 			} else {
 				fmt.Printf("failed creating gotip dir: %s\n", err.Error())
 				os.Exit(1)
@@ -107,6 +99,7 @@ func main() {
 }
 
 func callgo(paths Paths) {
+	var err error
 	exe := paths.JoinInPath("gotip", "bin", "go")
 	if len(os.Args) > 1 && os.Args[1] == "cli-version" {
 		printCliVersion()
@@ -114,7 +107,7 @@ func callgo(paths Paths) {
 	}
 
 	g := exec.Command(exe, os.Args[1:]...)
-	err := os.Setenv("GOPATH", paths.GoPath)
+	os.Setenv("GOPATH", paths.GoPath)
 	os.Setenv("GOROOT", paths.GoRoot)
 	os.Setenv("GOBIN", paths.GoBin)
 
@@ -128,7 +121,7 @@ func callgo(paths Paths) {
 			if newErr, ok := err.(*exec.ExitError); ok {
 				os.Exit(newErr.ExitCode())
 			} else {
-				fmt.Printf("go exec err:", err)
+				fmt.Printf("go exec err: %s\n", err)
 			}
 		}
 		if g.Process != nil && sigResult != nil {
@@ -176,6 +169,7 @@ func (hasher *hashInterceptReader) Read(p []byte) (n int, err error) {
 }
 
 func extract(gopath string, newP Paths) {
+	fmt.Printf("Expected paths: %s\n", newP)
 	thisOs := runtime.GOOS
 	if thisOs == "darwin" {
 		thisOs = "mac"
@@ -200,7 +194,7 @@ func extract(gopath string, newP Paths) {
 	archiveFile := archiveReq.Body
 	path, _ := filepath.Split(archiveReq.Request.URL.Path)
 	fileName := filepath.Base(path)
-	fmt.Printf("Found release %s\n", fileName)
+	fmt.Printf("Fetching precompiled release: %s\n", fileName)
 	hasher := &hashInterceptReader{sourceReader: archiveFile}
 
 	data := lz4.NewReader(hasher)
