@@ -1,8 +1,8 @@
-### precompiled gotip
+### Precompiled dev versions of golang
 
-Using `gotip` can delay
+Using `gotip` to run a dev version of go can delay
 CI/unit tests for **4+ minutes**
-since it doesn't cache and goes through the whole toolchain process  all the time.
+since it isn't cached and goes through the whole toolchain process all the time.
 
 This repo fixes that by storing precompiled daily gotip builds.
 
@@ -12,7 +12,9 @@ This repo fixes that by storing precompiled daily gotip builds.
 go install github.com/clean8s/gotip-built/gotip@master
 gotip download
 ```
-Then you can use it as usual go: `gotip mod tidy`, `gotip install`, `gotip version`, ...
+Then you can use it as usual `go`: `gotip install`, `gotip mod tidy`, ...
+
+👷 As of October, the most useful merged feature is [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics).
 
 ---
 
