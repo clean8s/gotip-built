@@ -21,7 +21,7 @@ jobs:
     - name: Get go version commit ID
       id: commitid
       run: |
-        echo "::set-output name=content::$($HOME/sdk/gotip/bin/go version | grep -oE '1\.[^ ]+')"
+        echo "::set-output name=content::$(cd "$HOME/sdk/gotip/bin" && ./go version" | grep -oE '1\.[^ ]+')"
     - name: Setup dist [unix]
       run:  rm -r ./gotip && mkdir dist && rm -rf $HOME/sdk/gotip/.git && mv $HOME/sdk/gotip . && python3 -m pip install lz4tools && lz4toolsCli ./gotip "dist/gotip-amd64-${{ matrix.os }}.tar.lz4"
       if: ${{ matrix.os != 'windows-latest' }}
