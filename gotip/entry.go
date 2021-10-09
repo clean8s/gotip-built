@@ -17,7 +17,6 @@ import (
 	"bufio"
 	"hash"
 	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 )
 
@@ -199,7 +198,9 @@ func extract(gopath string, newP Paths) {
 		log.Fatalln(err)
 	}
 	archiveFile := archiveReq.Body
-
+	path, _ := filepath.Split(archiveReq.Request.URL.Path)
+	fileName := filepath.Base(path)
+	fmt.Printf("Found release %s\n", fileName)
 	hasher := &hashInterceptReader{sourceReader: archiveFile}
 
 	data := lz4.NewReader(hasher)
@@ -248,9 +249,9 @@ func extract(gopath string, newP Paths) {
 			if actuallyRead < potentiallyRead {
 				hasher.Read(make([]byte, potentiallyRead - actuallyRead))
 			}
-			hsum := hex.EncodeToString(hasher.sha256.Sum(nil))
-			fmt.Printf("Done, SHA256 is: %s", hsum)
-			os.WriteFile(filepath.Join(newP.GoPath, ".tipsuccess"), []byte{}, os.ModePerm)
+			shasum := hasher.sha256.Sum(nil)
+			fmt.Printf("Done, SHA256 is: %x", shasum)
+			os.WriteFile(filepath.Join(newP.GoPath, ".tipsuccess"), []byte(fmt.Sprintf("%s\n%x", fileName, shasum)), os.ModePerm)
 			break
 		}
 
