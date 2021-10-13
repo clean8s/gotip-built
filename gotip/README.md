@@ -6,7 +6,7 @@ as it goes through the whole toolchain compiling process.
 
 <p align="center">
   This repo compiles go on a daily basis so you can try dev features in an instant: <br/>
-  <img src="./gotip-scr.png" width="60%" />
+  <img src="../gotip-scr.png" width="60%" />
 </p>
 
 As of October, the most useful features merged on master are [fuzz testing](https://go.dev/blog/fuzz-beta), and of course, [Go generics](https://github.com/golang/go/labels/generics). Note that gotip is **made for golang devs, and certainly not ready for production.**
